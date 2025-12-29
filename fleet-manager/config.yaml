@@ -1,0 +1,91 @@
+# Fleet Configuration for Manufacturing Sites
+
+sites:
+  - name: "Plant-01-Assembly"
+    location: "Detroit, MI"
+    plc_type: "Siemens S7-1500"
+    firmware_version: "2.9.3"
+    line_type: "Assembly"
+    repo_path: "/repos/plant-01-assembly"
+    safety_rating: "SIL-2"
+    
+  - name: "Plant-01-Welding"
+    location: "Detroit, MI"
+    plc_type: "Siemens S7-1500"
+    firmware_version: "2.9.3"
+    line_type: "Welding"
+    repo_path: "/repos/plant-01-welding"
+    safety_rating: "SIL-3"
+    
+  - name: "Plant-02-Assembly"
+    location: "Chicago, IL"
+    plc_type: "Allen-Bradley ControlLogix"
+    firmware_version: "32.011"
+    line_type: "Assembly"
+    repo_path: "/repos/plant-02-assembly"
+    safety_rating: "SIL-2"
+    
+  - name: "Plant-02-Packaging"
+    location: "Chicago, IL"
+    plc_type: "Allen-Bradley ControlLogix"
+    firmware_version: "32.011"
+    line_type: "Packaging"
+    repo_path: "/repos/plant-02-packaging"
+    safety_rating: "SIL-1"
+    
+  - name: "Plant-03-CNC"
+    location: "Austin, TX"
+    plc_type: "Siemens S7-1200"
+    firmware_version: "4.5.0"
+    line_type: "Machining"
+    repo_path: "/repos/plant-03-cnc"
+    safety_rating: "SIL-2"
+
+# Agent configuration
+agent:
+  type: "claude-code"  # Following Spotify's choice
+  model: "claude-sonnet-4.5"
+  max_turns: 10
+  max_retries: 3
+  
+  # MCP Tools available to agent
+  tools:
+    - name: "verify"
+      description: "Run formatters, compilers, and tests"
+    - name: "git"
+      description: "Limited git operations (no push)"
+    - name: "ripgrep"
+      description: "Search code patterns"
+      
+# Verification settings
+verification:
+  # Deterministic verifiers
+  verifiers:
+    - type: "compiler"
+      required: true
+      timeout: 300
+    - type: "safety"
+      required: true
+      timeout: 600
+    - type: "simulation"
+      required: false  # Optional, runs if available
+      timeout: 900
+      
+  # LLM judge settings
+  judge:
+    enabled: true
+    model: "claude-sonnet-4.5"
+    veto_threshold: 0.7  # Confidence threshold to reject changes
+
+# Change management
+change_management:
+  approval_required: true
+  safety_review_required: true
+  simulation_before_deploy: true
+  
+# Logging and observability
+logging:
+  level: "INFO"
+  mlflow_tracking: true
+  gcp_logs: true
+  trace_sessions: true

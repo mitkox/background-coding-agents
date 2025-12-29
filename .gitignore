@@ -1,0 +1,140 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+.pytype/
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyright/
+.ruff_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.envrc
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# MLflow
+mlruns/
+mlartifacts/
+
+# Documentation
+docs/_build/
+docs/site/
+site/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# PLC specific (if real integrations added)
+*.acd
+*.L5X
+*.ap15
+*.zap15
+
+# Compiled PLC code
+*.bin
+*.hex
+*.elf
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# CI/CD
+.github/workflows/*.log
+
+# Distribution / packaging
+*.manifest
+*.spec
+
+# PyInstaller
+*.spec
+
+# Security
+*.pem
+*.key
+*.cert
+credentials.json
+secrets.yaml
+
+# Local configuration
+config.local.yaml
+*-local.yaml
+
+# Output directories
+outputs/
+results/
+artifacts/
+
+# Editor configurations (uncomment if needed)
+# .editorconfig
