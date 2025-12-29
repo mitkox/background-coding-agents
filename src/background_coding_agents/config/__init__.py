@@ -1,10 +1,30 @@
 """
 Configuration management with validation.
 
-Handles application configuration using Pydantic Settings for
-environment-aware, validated configuration.
-
-Will be implemented in Phase 1, Week 2.
+Provides environment-aware, validated configuration using Pydantic Settings.
+Supports multiple configuration sources: environment variables, YAML files, and programmatic overrides.
 """
 
-__all__ = []  # Will be populated as config modules are added
+from background_coding_agents.config.settings import (
+    AgentSettings,
+    AppSettings,
+    LLMSettings,
+    LoggingSettings,
+    SafetySettings,
+    TelemetrySettings,
+    VerificationSettings,
+    get_settings,
+    reload_settings,
+)
+
+__all__ = [
+    "AppSettings",
+    "LLMSettings",
+    "AgentSettings",
+    "VerificationSettings",
+    "SafetySettings",
+    "LoggingSettings",
+    "TelemetrySettings",
+    "get_settings",
+    "reload_settings",
+]

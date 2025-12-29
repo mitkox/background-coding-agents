@@ -1,5 +1,62 @@
 # Fleet Configuration for Manufacturing Sites
+# Supports both cloud and local LLM providers for air-gapped environments
 
+# ============================================================================
+# LLM Provider Configuration
+# ============================================================================
+# Supported providers: anthropic, openai, vllm, llama_cpp, openai_compatible
+#
+# For air-gapped/offline environments, use local providers:
+#   - vllm: High-throughput production deployments
+#   - llama_cpp: Edge deployment on industrial PCs
+#
+# Recommended local models:
+#   - GLM-4.7: Excellent code generation and reasoning
+#   - MiniMax-M2.1: Strong multilingual and code capabilities
+#
+# Environment variables override these settings:
+#   LLM_PROVIDER, LLM_MODEL, LLM_BASE_URL
+
+llm:
+  # Cloud provider (default)
+  provider: "anthropic"
+  model: "claude-sonnet-4-20250514"
+
+  # Local provider examples (uncomment to use):
+
+  # vLLM with GLM-4.7 (recommended for production)
+  # provider: "vllm"
+  # model: "THUDM/glm-4.7"
+  # base_url: "http://localhost:8000"
+
+  # vLLM with MiniMax-M2.1
+  # provider: "vllm"
+  # model: "MiniMaxAI/MiniMax-M2.1"
+  # base_url: "http://localhost:8000"
+
+  # llama.cpp with GLM-4.7 (edge deployment)
+  # provider: "llama_cpp"
+  # model: "/models/glm-4.7.Q4_K_M.gguf"
+  # n_gpu_layers: -1  # Use all GPU layers
+
+  # llama.cpp with MiniMax-M2.1
+  # provider: "llama_cpp"
+  # model: "/models/MiniMax-M2.1.Q4_K_M.gguf"
+  # n_gpu_layers: -1
+
+  # OpenAI-compatible endpoint (for custom inference servers)
+  # provider: "openai_compatible"
+  # model: "glm-4.7"
+  # base_url: "http://localhost:8080/v1"
+
+  # Common settings
+  temperature: 0.0
+  max_tokens: 4096
+  timeout: 120
+
+# ============================================================================
+# Manufacturing Sites
+# ============================================================================
 sites:
   - name: "Plant-01-Assembly"
     location: "Detroit, MI"
@@ -8,7 +65,8 @@ sites:
     line_type: "Assembly"
     repo_path: "/repos/plant-01-assembly"
     safety_rating: "SIL-2"
-    
+    tags: ["siemens", "assembly", "midwest"]
+
   - name: "Plant-01-Welding"
     location: "Detroit, MI"
     plc_type: "Siemens S7-1500"
@@ -16,7 +74,8 @@ sites:
     line_type: "Welding"
     repo_path: "/repos/plant-01-welding"
     safety_rating: "SIL-3"
-    
+    tags: ["siemens", "welding", "midwest", "high-safety"]
+
   - name: "Plant-02-Assembly"
     location: "Chicago, IL"
     plc_type: "Allen-Bradley ControlLogix"
@@ -24,7 +83,8 @@ sites:
     line_type: "Assembly"
     repo_path: "/repos/plant-02-assembly"
     safety_rating: "SIL-2"
-    
+    tags: ["rockwell", "assembly", "midwest"]
+
   - name: "Plant-02-Packaging"
     location: "Chicago, IL"
     plc_type: "Allen-Bradley ControlLogix"
@@ -32,7 +92,8 @@ sites:
     line_type: "Packaging"
     repo_path: "/repos/plant-02-packaging"
     safety_rating: "SIL-1"
-    
+    tags: ["rockwell", "packaging", "midwest"]
+
   - name: "Plant-03-CNC"
     location: "Austin, TX"
     plc_type: "Siemens S7-1200"
@@ -40,52 +101,80 @@ sites:
     line_type: "Machining"
     repo_path: "/repos/plant-03-cnc"
     safety_rating: "SIL-2"
+    tags: ["siemens", "cnc", "southwest"]
 
-# Agent configuration
+# ============================================================================
+# Agent Configuration
+# ============================================================================
 agent:
-  type: "claude-code"  # Following Spotify's choice
-  model: "claude-sonnet-4.5"
   max_turns: 10
   max_retries: 3
-  
-  # MCP Tools available to agent
+  timeout: 300  # seconds
+
+  # MCP Tools available to agent (limited for predictability)
   tools:
-    - name: "verify"
-      description: "Run formatters, compilers, and tests"
-    - name: "git"
-      description: "Limited git operations (no push)"
-    - name: "ripgrep"
-      description: "Search code patterns"
-      
-# Verification settings
+    - "verify"
+    - "git_diff"
+    - "ripgrep"
+
+# ============================================================================
+# Verification Settings
+# ============================================================================
 verification:
-  # Deterministic verifiers
+  # Deterministic verifiers (run in order)
   verifiers:
     - type: "compiler"
       required: true
       timeout: 300
+
     - type: "safety"
       required: true
       timeout: 600
+      critical: true  # Hard stop on failure
+
     - type: "simulation"
       required: false  # Optional, runs if available
       timeout: 900
-      
+
   # LLM judge settings
   judge:
     enabled: true
-    model: "claude-sonnet-4.5"
-    veto_threshold: 0.7  # Confidence threshold to reject changes
+    confidence_threshold: 0.7  # Minimum confidence to approve
+    # Uses same LLM provider as main config, or specify:
+    # model: "gpt-4o"
 
-# Change management
+# ============================================================================
+# Change Management
+# ============================================================================
 change_management:
   approval_required: true
   safety_review_required: true
   simulation_before_deploy: true
-  
-# Logging and observability
+  create_backup: true
+
+# ============================================================================
+# Logging and Observability
+# ============================================================================
 logging:
   level: "INFO"
+  format: "json"  # json or text
+
+  # Telemetry
   mlflow_tracking: true
-  gcp_logs: true
+  mlflow_uri: "http://localhost:5000"
+
+  # Audit logging (required for compliance)
+  audit_log: "logs/audit.jsonl"
+
+  # Session tracing
   trace_sessions: true
+  trace_llm_calls: true
+
+# ============================================================================
+# API Configuration
+# ============================================================================
+api:
+  enabled: true
+  host: "0.0.0.0"
+  port: 8080
+  cors_origins: ["*"]  # Restrict in production

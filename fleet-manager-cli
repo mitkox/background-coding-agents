@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+"""
+Fleet Manager CLI Entry Point
+Convenience script to run the fleet manager from the command line.
+
+For the installed package, you can also use:
+  python -m background_coding_agents.fleet_manager.cli
+"""
+
+import sys
+from pathlib import Path
+
+# Add src to path if running from development
+repo_root = Path(__file__).parent
+src_path = repo_root / "src"
+if src_path.exists():
+    sys.path.insert(0, str(src_path))
+
+# Import and run
+import asyncio
+from background_coding_agents.fleet_manager.cli import main
+
+if __name__ == "__main__":
+    asyncio.run(main())

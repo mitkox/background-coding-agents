@@ -1,10 +1,23 @@
 """
-Structured logging with context and correlation IDs.
+Structured logging with context and audit trail.
 
-Provides production-quality logging with structured output,
-context tracking, and integration with observability platforms.
-
-Will be implemented in Phase 2, Week 3.
+Provides production-quality logging with:
+- Structured JSON output for log aggregation
+- Context tracking with correlation IDs
+- Audit logging for regulatory compliance
+- Integration with observability platforms
 """
 
-__all__ = []  # Will be populated as logging modules are added
+from background_coding_agents.logging.logger import (
+    AuditLogger,
+    LogContext,
+    get_logger,
+    setup_logging,
+)
+
+__all__ = [
+    "get_logger",
+    "setup_logging",
+    "LogContext",
+    "AuditLogger",
+]

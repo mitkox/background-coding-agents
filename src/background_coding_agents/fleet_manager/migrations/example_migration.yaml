@@ -1,0 +1,59 @@
+# Example Migration Configuration
+# This is a demonstration of a migration task
+
+prompt: |
+  Update the PLC code to add better error handling and logging.
+
+  PRECONDITIONS:
+  - Only proceed if the PLC firmware version is 2.9.x or higher
+  - Backup must be verified before making changes
+
+  TASK:
+  Add try-catch blocks around critical operations and enhance logging statements.
+
+  EXAMPLES:
+  Before:
+  ```
+  VAR
+    temperature : REAL;
+  END_VAR
+
+  temperature := ReadSensor();
+  ```
+
+  After:
+  ```
+  VAR
+    temperature : REAL;
+    error_code : INT;
+  END_VAR
+
+  TRY
+    temperature := ReadSensor();
+    LogInfo('Temperature read successfully: ' + REAL_TO_STRING(temperature));
+  CATCH error_code
+    LogError('Failed to read temperature sensor, error: ' + INT_TO_STRING(error_code));
+    temperature := 0.0;
+  END_TRY
+  ```
+
+  SUCCESS CRITERIA:
+  - Code compiles without errors
+  - All sensor reads have error handling
+  - Logging statements added for all critical operations
+  - Existing tests pass
+  - Safety verification passes
+
+target_filter:
+  plc_type: "Siemens S7-1500"
+  firmware_version: "2.9"
+
+verifiers:
+  - type: "compiler"
+    required: true
+  - type: "safety"
+    required: true
+  - type: "simulation"
+    required: false
+
+dry_run: true

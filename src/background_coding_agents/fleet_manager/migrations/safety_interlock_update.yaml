@@ -1,0 +1,128 @@
+# Safety Interlock Update Migration
+# Updates safety interlock patterns to ISO 13849-1:2023 compliance
+
+name: safety_interlock_update
+description: |
+  Update safety interlock logic to use redundant monitoring patterns
+  as required by ISO 13849-1:2023 for Performance Level d (PLd).
+
+version: "1.0.0"
+
+# Main task description for the agent
+prompt: |
+  Update all safety interlock patterns to use redundant input monitoring.
+
+  Replace single-input guard monitoring patterns with dual-input patterns
+  that include diagnostic pulse testing for enhanced reliability.
+
+  Focus on:
+  1. Guard door sensors
+  2. Light curtain inputs
+  3. Safety mat sensors
+  4. Two-hand control circuits
+
+# Preconditions - when to apply this migration
+preconditions:
+  - Site has SIL-2 or higher safety rating
+  - Firmware version 2.9 or higher
+  - Guard monitoring functions are present in codebase
+  - Backup of current code exists
+
+# Exclusions - when NOT to apply
+exclusions:
+  - Emergency stop logic (handled separately)
+  - Already-certified SIL-3 modules
+  - Third-party safety controllers
+  - Legacy systems scheduled for replacement
+
+# Examples for the agent (Spotify best practice: 3-5 variations)
+examples:
+  - description: "Simple guard door pattern"
+    before: |
+      IF Guard_Sensor = TRUE THEN
+        Safety_OK := TRUE;
+      ELSE
+        Safety_OK := FALSE;
+      END_IF;
+    after: |
+      SAFETY_GUARD_MONITOR(
+        Input1 := Guard_Sensor_A,
+        Input2 := Guard_Sensor_B,
+        TestPulse := Guard_Test_Pulse,
+        Discrepancy_Time := T#100ms,
+        Safety_Output => Safety_OK,
+        Error => Guard_Error
+      );
+
+  - description: "Light curtain pattern"
+    before: |
+      Light_Curtain_Safe := Light_Curtain_Input;
+    after: |
+      SAFETY_LIGHT_CURTAIN(
+        OSSD1 := Light_Curtain_OSSD1,
+        OSSD2 := Light_Curtain_OSSD2,
+        EDM := Light_Curtain_EDM_FB,
+        Reset := Operator_Reset,
+        Safe_Output => Light_Curtain_Safe,
+        Fault => Light_Curtain_Fault
+      );
+
+  - description: "Safety mat pattern"
+    before: |
+      Mat_Active := Safety_Mat_Contact;
+      IF Mat_Active THEN
+        Zone_Safe := FALSE;
+      END_IF;
+    after: |
+      SAFETY_MAT_MONITOR(
+        Contact_NC := Safety_Mat_NC,
+        Contact_NO := Safety_Mat_NO,
+        Min_Pressure := 20.0,  (* kg *)
+        Fault_Detection => Zone_Safe,
+        Mat_Fault => Mat_Diagnostics.Fault
+      );
+
+# Success criteria for verification
+success_criteria:
+  - All safety interlocks use redundant inputs (two channels)
+  - Diagnostic coverage meets PLd requirements (DC >= 90%)
+  - Discrepancy detection time <= 100ms
+  - Test pulse frequency appropriate for application
+  - Error outputs connected to safety PLC fault handler
+  - No single points of failure in safety circuits
+  - Code compiles without errors
+
+# Target site filter
+target_filter:
+  safety_rating: "SIL-2"
+  firmware_version: "2.9"
+  tags: []
+
+# Files/patterns that must NOT be modified
+forbidden_modifications:
+  - "**/emergency_stop*.st"
+  - "**/e_stop*.st"
+  - "**/certified_*.st"
+  - "**/sil3_*.st"
+
+# Verification requirements
+required_verifications:
+  - compile
+  - safety
+
+# Human review required for safety-critical changes
+requires_human_review: true
+
+# Execution settings
+dry_run: true
+max_concurrent_sites: 3
+continue_on_failure: false
+rollback_on_failure: true
+
+# Metadata
+author: "Safety Engineering Team"
+tags:
+  - safety
+  - iso-13849
+  - pld
+  - interlock
