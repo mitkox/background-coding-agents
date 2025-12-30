@@ -23,15 +23,17 @@ pip install -r requirements.txt
 
 ### Running the Fleet Manager
 ```bash
-# From root directory
-cd fleet-manager
-python cli.py --help
+# From root directory (using installed entry point)
+fleet-manager --help
 
 # Example: Dry-run migration
-python cli.py run-migration safety_interlock_update --dry-run
+fleet-manager safety_interlock_update --dry-run
 
 # Example: List configured sites
-python cli.py list-sites
+fleet-manager list-sites
+
+# View migration status
+fleet-manager status
 ```
 
 ### Development
@@ -58,16 +60,17 @@ This project implements a **Fleet Management Architecture** for automated code c
    - Manages verification loops and change requests
    - Configuration in `fleet-manager/config.yaml`
 
-2. **Background Coding Agent** (`agents/plc_agent.py`)
+2. **Background Coding Agent** (`src/background_coding_agents/agents/plc_agent.py`)
    - Transforms PLC code based on natural language prompts
    - Uses iterative change-verify loops (max 10 turns)
+   - **Supports local LLMs** (vLLM, llama.cpp) for air-gapped deployments
+   - Cloud LLMs optional (Anthropic, OpenAI, MiniMax)
    - Limited tool access (verify, git diff, ripgrep)
-   - Designed to work with Claude Code or custom agent implementations
 
-3. **Verification Layers** (`verifiers/`)
+3. **Verification Layers** (`src/background_coding_agents/verifiers/`)
    - **PLCCompilerVerifier**: Deterministic compilation checks
    - **SafetyVerifier**: CRITICAL - Safety-rated logic verification (emergency stops, interlocks, SIL compliance)
-   - **SimulationVerifier**: Runtime simulation testing
+   - **SimulationVerifier**: Runtime simulation testing (coming soon)
    - All verifiers return `{'passed': bool, 'message': str, 'details': ...}`
 
 4. **Migration Prompts** (`prompts/`)
@@ -159,26 +162,78 @@ See `verifiers/safety_verifier.py` for complete checks.
 
 ### Configuration Files
 
-**fleet-manager/config.yaml** structure:
+**src/background_coding_agents/fleet_manager/config.yaml** structure:
+- `llm`: **Local-first LLM configuration** (vLLM/llama.cpp default, cloud optional)
 - `sites[]`: Manufacturing site definitions (PLC type, firmware, safety rating, repo path)
-- `agent`: Agent configuration (type, model, max turns, available tools)
+- `agent`: Agent configuration (max turns, available tools, timeouts)
 - `verification`: Verifier settings and LLM judge configuration
 - `change_management`: Approval and deployment requirements
-- `logging`: MLflow tracking and observability settings
+- `logging`: Structured JSON logging and observability settings
 
 ### Dependencies
 
 Core dependencies in `requirements.txt`:
 - `pyyaml`: Configuration management
-- `asyncio`: Async agent operations
-- `mlflow`: Experiment tracking (following Spotify's approach)
-- `anthropic`: Claude API integration
+- `pydantic`, `pydantic-settings`: Type-safe configuration with .env support
+- `httpx`: HTTP client for local vLLM/API communication
+- `anthropic`: Optional cloud LLM support (Anthropic, MiniMax)
+- `structlog`: Structured JSON logging
 - `pytest`, `pytest-asyncio`: Testing framework
 
 PLC-specific libraries (commented out, vendor-dependent):
 - `pycomm3`: Allen-Bradley PLCs
 - `snap7`: Siemens S7 PLCs
 - `pymodbus`: Modbus communication
+
+## Local LLM Deployment (Recommended)
+
+This project prioritizes **local LLM deployment** for air-gapped industrial environments:
+
+### Supported Local Providers
+
+**vLLM (Recommended for Production)**:
+```bash
+# Start vLLM server with MiniMax M2.1
+vllm serve minimax-m2.1 --port 8000
+
+# Or with GLM-4.7
+vllm serve THUDM/glm-4.7-chat --port 8000
+```
+
+**llama.cpp (Edge Deployment)**:
+```bash
+# Download GGUF model
+llama-cpp-python serve /models/minimax-m2.1.Q4_K_M.gguf
+```
+
+### Configuration
+
+**Environment Variables** (`.env` file):
+```bash
+# Local vLLM (no API key required)
+LLM_PROVIDER=vllm
+LLM_MODEL=minimax-m2.1
+LLM_BASE_URL=http://localhost:8000
+LLM_TEMPERATURE=0.0
+```
+
+**Supported Models**:
+- `minimax-m2.1`: Multilingual, code generation (recommended)
+- `THUDM/glm-4.7-chat`: Excellent reasoning and code
+- `MiniMaxAI/MiniMax-M2.1`: HuggingFace format
+
+**Cloud Providers** (optional, requires API keys):
+- Anthropic Claude (claude-sonnet-4-20250514)
+- OpenAI GPT (gpt-4o)
+- MiniMax Cloud (via Anthropic-compatible API)
+
+### Why Local First?
+
+1. **Air-gapped environments**: Manufacturing requires offline capability
+2. **Data privacy**: Sensitive PLC code stays on-premises
+3. **Cost predictability**: No per-token charges
+4. **Low latency**: Local inference faster than API calls
+5. **Compliance**: Meets industrial security requirements
 
 ## Working with This Codebase
 
@@ -224,6 +279,34 @@ PLC-specific libraries (commented out, vendor-dependent):
 - Edit `fleet-manager/config.yaml`
 - Each site requires: name, location, plc_type, firmware_version, repo_path, safety_rating
 - Use filters in migration configs to target specific sites
+
+## Recent Updates
+
+### December 2025
+
+**Local vLLM Integration** (commit 247254b):
+- Switched to local vLLM as primary deployment target
+- Updated default configuration to prioritize air-gapped deployments
+- Cloud providers now optional (only needed when specified)
+- No authentication required for local inference
+
+**NoneType Error Fixes** (commit 661fc2a):
+- Fixed "argument of type 'NoneType' is not iterable" errors
+- Added None checks in `_discover_relevant_files`
+- Added None check in `_extract_code` with graceful fallback
+- Added None check in `_create_plan` with proper error handling
+- Agent now handles empty/None LLM responses gracefully
+
+**Entry Point Fix** (commit a210ce1):
+- Fixed fleet-manager async entry point issue
+- Renamed async main() to async_main() to avoid setuptools confusion
+- Added proper sync wrapper for CLI execution
+
+**Configuration Loading** (commits 7d465aa, 247254b):
+- Added .env file support via pydantic-settings
+- Environment variables now properly override YAML config
+- Fixed base_url conditional passing in Anthropic provider
+- Added SiteMigrationResult export
 
 ## Testing and Validation
 

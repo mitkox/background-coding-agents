@@ -5,6 +5,7 @@
 [![Based on Spotify Engineering](https://img.shields.io/badge/Based%20on-Spotify%20Engineering-1DB954?style=flat-square)](https://engineering.atspotify.com/)
 [![Manufacturing](https://img.shields.io/badge/Industry-Manufacturing-orange?style=flat-square)]()
 [![Safety Critical](https://img.shields.io/badge/Safety-Critical-red?style=flat-square)]()
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
 ---
 
@@ -145,22 +146,41 @@ background-coding-agents/
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/background-coding-agents.git
+git clone https://github.com/mitkox/background-coding-agents.git
 cd background-coding-agents
 
-# Install with development dependencies
+# Run setup script
+./setup.sh
+
+# Or manual setup:
+python3 -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -e ".[dev]"
 
-# Set up environment variables
+# Configure for local vLLM (recommended)
 cp .env.example .env
-# Edit .env with your API keys (ANTHROPIC_API_KEY, etc.)
-
-# Install pre-commit hooks (recommended)
-pre-commit install
+# Edit .env - no API keys needed for local deployment!
 
 # Verify installation
 ./verify_setup.sh
+fleet-manager --help
 ```
+
+### 1.5 Start Local LLM (Recommended)
+
+```bash
+# Install vLLM (if not already installed)
+pip install vllm
+
+# Start local inference server
+vllm serve minimax-m2.1 --port 8000
+# Or: vllm serve THUDM/glm-4.7-chat --port 8000
+
+# Test the fleet manager (dry run)
+fleet-manager safety_interlock_update --dry-run
+```
+
+**No API keys required!** The default configuration uses local vLLM.
 
 ### 2. Understand the Concepts (30 minutes)
 ```bash
@@ -223,11 +243,12 @@ pre-commit run --all-files
 - **[docs/implementation-roadmap.md](docs/implementation-roadmap.md)** - Year 1 phased plan
 - **[docs/diagrams.md](docs/diagrams.md)** - Visual architecture
 
-### 💻 Code Implementation (~920 lines)
-- **[fleet-manager/cli.py](fleet-manager/cli.py)** - Main orchestration tool
-- **[agents/plc_agent.py](agents/plc_agent.py)** - PLC transformation agent
-- **[verifiers/safety_verifier.py](verifiers/safety_verifier.py)** - Safety verification ⚠️
-- **[verifiers/plc_compiler_verifier.py](verifiers/plc_compiler_verifier.py)** - Compiler verification
+### 💻 Code Implementation (~1,200 lines)
+- **[src/background_coding_agents/fleet_manager/cli.py](src/background_coding_agents/fleet_manager/cli.py)** - Main orchestration tool
+- **[src/background_coding_agents/agents/plc_agent.py](src/background_coding_agents/agents/plc_agent.py)** - PLC transformation agent (722 lines)
+- **[src/background_coding_agents/verifiers/safety_verifier.py](src/background_coding_agents/verifiers/safety_verifier.py)** - Safety verification ⚠️
+- **[src/background_coding_agents/verifiers/plc_compiler_verifier.py](src/background_coding_agents/verifiers/plc_compiler_verifier.py)** - Compiler verification
+- **[src/background_coding_agents/llm/](src/background_coding_agents/llm/)** - Multi-provider LLM support (vLLM, llama.cpp, Anthropic, OpenAI)
 
 ### 📝 Migration Prompts (Spotify-Style)
 - **[prompts/safety_interlock_update.md](prompts/safety_interlock_update.md)** - ISO 13849-1 update
@@ -235,6 +256,51 @@ pre-commit run --all-files
 
 ### 🎯 Complete Examples
 - **[examples/safety_interlock_update/](examples/safety_interlock_update/)** - End-to-end walkthrough
+
+---
+
+## 🖥️ Local LLM Deployment (Air-Gapped Ready)
+
+**This project prioritizes local LLM deployment** for industrial environments:
+
+### Why Local First?
+- ✅ **Air-gapped environments**: No internet required
+- ✅ **Data privacy**: PLC code stays on-premises
+- ✅ **Cost predictability**: No per-token API charges
+- ✅ **Low latency**: Faster than cloud APIs
+- ✅ **Compliance**: Meets industrial security standards
+
+### Supported Providers
+
+**Local (Recommended)**:
+- **vLLM**: High-performance inference (minimax-m2.1, GLM-4.7)
+- **llama.cpp**: Edge deployment on industrial PCs
+- **No API keys required!**
+
+**Cloud (Optional)**:
+- Anthropic Claude (requires ANTHROPIC_API_KEY)
+- OpenAI GPT (requires OPENAI_API_KEY)
+- MiniMax Cloud (requires API key)
+
+### Quick Setup
+
+```bash
+# 1. Install vLLM
+pip install vllm
+
+# 2. Start server
+vllm serve minimax-m2.1 --port 8000
+
+# 3. Configure (already default in .env.example)
+LLM_PROVIDER=vllm
+LLM_MODEL=minimax-m2.1
+LLM_BASE_URL=http://localhost:8000
+
+# 4. Run fleet manager
+fleet-manager safety_interlock_update --dry-run
+```
+
+See [AGENTS.md](AGENTS.md) for complete local deployment guide.
 
 ---
 
@@ -444,9 +510,11 @@ Production Deployment
 3. [Background Coding Agents: Predictable Results Through Strong Feedback Loops](https://engineering.atspotify.com/2025/12/feedback-loops-background-coding-agents-part-3)
 
 ### Technologies
-- **Claude Code** - Anthropic's coding agent (Spotify's choice)
+- **Local LLMs** - vLLM, llama.cpp for air-gapped deployment (recommended)
+- **Cloud LLMs** - Anthropic Claude, OpenAI GPT, MiniMax (optional)
 - **Model Context Protocol (MCP)** - Tool interface for agents
-- **MLflow** - Experiment tracking and logging
+- **Pydantic** - Type-safe configuration with .env support
+- **structlog** - Structured JSON logging
 
 ### Standards
 - **ISO 13849-1** - Safety of machinery
@@ -496,7 +564,31 @@ cat docs/implementation-roadmap.md
 
 ---
 
-## 💬 Summary
+## � Recent Updates
+
+### December 2025
+
+**✨ Local vLLM Integration** (v0.2.0)
+- Switched to local vLLM as primary deployment target
+- No API keys required for default configuration
+- Air-gapped deployment ready out of the box
+- Cloud providers now optional
+
+**🐛 Agent Reliability Fixes**
+- Fixed NoneType iteration errors in LLM response handling
+- Added graceful fallbacks for empty/None responses
+- Improved error handling in discovery and planning phases
+
+**⚙️ Configuration Improvements**
+- Environment variables properly override YAML config
+- .env file support via pydantic-settings
+- Fixed fleet-manager entry point async/sync issues
+
+**See [AGENTS.md](AGENTS.md) for complete technical documentation.**
+
+---
+
+## �💬 Summary
 
 This repository demonstrates how **Spotify's proven approach** (1,500+ PRs, 60-90% time savings) can be **adapted for industrial manufacturing** with appropriate safety and compliance layers.
 
