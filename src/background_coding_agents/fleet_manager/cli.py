@@ -669,8 +669,8 @@ REASONING: Brief explanation
         print(f"[ERROR] {message}", file=sys.stderr)
 
 
-async def main() -> int:
-    """Main entry point for fleet-manager CLI."""
+async def async_main() -> int:
+    """Async entry point for fleet-manager CLI."""
     parser = argparse.ArgumentParser(
         description="Fleet Manager for Industrial Manufacturing Automation",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -773,7 +773,12 @@ Environment Variables:
 
 def run() -> None:
     """Synchronous entry point."""
-    sys.exit(asyncio.run(main()))
+    sys.exit(asyncio.run(async_main()))
+
+
+def main() -> None:
+    """Main entry point (alias for run)."""
+    run()
 
 
 if __name__ == "__main__":
