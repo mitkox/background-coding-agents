@@ -30,6 +30,7 @@ from background_coding_agents.models.migration import (
     MigrationConfig,
     MigrationResult,
     MigrationStatus,
+    SiteMigrationResult,
     TargetFilter,
 )
 from background_coding_agents.models.site import (
@@ -53,6 +54,7 @@ __all__ = [
     "MigrationConfig",
     "MigrationResult",
     "MigrationStatus",
+    "SiteMigrationResult",
     "TargetFilter",
     # Change models
     "PLCChange",
