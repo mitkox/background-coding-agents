@@ -260,11 +260,14 @@ Respond with just the file paths, nothing else."""
             )
 
             # Parse file paths from response
-            files = [
-                line.strip()
-                for line in response.content.split("\n")
-                if line.strip() and not line.startswith("#")
-            ]
+            if response.content:
+                files = [
+                    line.strip()
+                    for line in response.content.split("\n")
+                    if line.strip() and not line.startswith("#")
+                ]
+            else:
+                files = []
 
             logger.info("Discovered relevant files", file_count=len(files))
             return files[:10]  # Limit to avoid context overflow
@@ -338,11 +341,15 @@ Format your response as a numbered list:
             )
 
             # Parse steps from response
-            steps = self._parse_plan_steps(response.content)
-            plan.steps = steps
-            plan.files_to_modify = list(set(s.target_file for s in steps if s.target_file))
+            if response.content:
+                steps = self._parse_plan_steps(response.content)
+                plan.steps = steps
+                plan.files_to_modify = list(set(s.target_file for s in steps if s.target_file))
 
-            logger.info("Created execution plan", step_count=len(steps))
+                logger.info("Created execution plan", step_count=len(steps))
+            else:
+                logger.warning("LLM returned empty content for planning")
+                raise ValueError("Empty plan response")
 
         except Exception as e:
             logger.warning("Plan creation failed, using default", error=str(e))
@@ -525,8 +532,12 @@ Provide the modified code. Only include the code, no explanations."""
         # Return placeholder for non-existent files
         return f"// Placeholder for {file_path}\n// Original content not available"
 
-    def _extract_code(self, content: str) -> str:
+    def _extract_code(self, content: str | None) -> str:
         """Extract code from LLM response."""
+        # Handle None content
+        if not content:
+            return "// No content generated"
+        
         # Try to find code blocks
         if "```" in content:
             blocks = content.split("```")
