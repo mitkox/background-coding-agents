@@ -388,17 +388,18 @@ class FleetManager:
         agent_config = self.config.get("agent", {})
         llm_config = self.config.get("llm", {})
 
-        # Determine provider
+        # Determine provider (env var takes priority over YAML)
         provider_str = llm_config.get("provider", self._settings.llm.provider.value)
         try:
             provider = ProviderType(provider_str.lower())
         except ValueError:
             provider = ProviderType.ANTHROPIC
 
+        # Use environment variables if available, fall back to YAML config
         return AgentConfig(
             llm_provider=provider,
-            llm_model=llm_config.get("model"),
-            llm_base_url=llm_config.get("base_url"),
+            llm_model=llm_config.get("model") or self._settings.llm.model,
+            llm_base_url=llm_config.get("base_url") or self._settings.llm.base_url,
             max_turns=agent_config.get("max_turns", 10),
             max_retries=agent_config.get("max_retries", 3),
             tools=agent_config.get("tools", ["verify", "git_diff", "ripgrep"]),

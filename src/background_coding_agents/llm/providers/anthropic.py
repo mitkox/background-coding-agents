@@ -45,12 +45,19 @@ class AnthropicProvider(BaseLLMProvider):
         try:
             import anthropic
 
-            self._client = anthropic.AsyncAnthropic(
-                api_key=self.config.api_key,
-                base_url=self.config.base_url,
-                timeout=self.config.timeout,
-                max_retries=self.config.max_retries,
-            )
+            # Build client kwargs
+            client_kwargs = {
+                "api_key": self.config.api_key,
+                "timeout": self.config.timeout,
+                "max_retries": self.config.max_retries,
+            }
+            
+            # Only set base_url if it's explicitly provided
+            if self.config.base_url:
+                client_kwargs["base_url"] = self.config.base_url
+                logger.info(f"Using custom base URL: {self.config.base_url}")
+
+            self._client = anthropic.AsyncAnthropic(**client_kwargs)
             logger.info(f"Initialized Anthropic provider with model {self.config.model}")
         except ImportError:
             raise ImportError(

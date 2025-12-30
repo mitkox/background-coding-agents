@@ -4,34 +4,40 @@
 # ============================================================================
 # LLM Provider Configuration
 # ============================================================================
-# Supported providers: anthropic, openai, vllm, llama_cpp, openai_compatible
+# Supported providers: vllm, llama_cpp, anthropic, openai, openai_compatible
 #
-# For air-gapped/offline environments, use local providers:
-#   - vllm: High-throughput production deployments
+# PRIMARY: Use local providers for air-gapped industrial environments
+#   - vllm: High-throughput production deployments (RECOMMENDED)
 #   - llama_cpp: Edge deployment on industrial PCs
 #
 # Recommended local models:
+#   - minimax-m2.1: Strong multilingual and code capabilities
 #   - GLM-4.7: Excellent code generation and reasoning
-#   - MiniMax-M2.1: Strong multilingual and code capabilities
 #
 # Environment variables override these settings:
 #   LLM_PROVIDER, LLM_MODEL, LLM_BASE_URL
 
 llm:
-  # Cloud provider (default)
-  provider: "anthropic"
-  model: "claude-sonnet-4-20250514"
+  # Local vLLM (default - no auth required)
+  provider: "vllm"
+  model: "minimax-m2.1"
+  base_url: "http://localhost:8000"
 
-  # Local provider examples (uncomment to use):
+  # Cloud provider examples (require API keys):
 
-  # vLLM with GLM-4.7 (recommended for production)
+  # Anthropic Claude
+  # provider: "anthropic"
+  # model: "claude-sonnet-4-20250514"
+
+  # OpenAI
+  # provider: "openai"
+  # model: "gpt-4o"
+
+  # Other local provider examples:
+
+  # vLLM with GLM-4.7
   # provider: "vllm"
   # model: "THUDM/glm-4.7"
-  # base_url: "http://localhost:8000"
-
-  # vLLM with MiniMax-M2.1
-  # provider: "vllm"
-  # model: "MiniMaxAI/MiniMax-M2.1"
   # base_url: "http://localhost:8000"
 
   # llama.cpp with GLM-4.7 (edge deployment)
@@ -46,7 +52,7 @@ llm:
 
   # OpenAI-compatible endpoint (for custom inference servers)
   # provider: "openai_compatible"
-  # model: "glm-4.7"
+  # model: "minimax-m2.1"
   # base_url: "http://localhost:8080/v1"
 
   # Common settings

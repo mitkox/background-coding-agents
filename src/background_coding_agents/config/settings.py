@@ -48,6 +48,8 @@ class LLMSettings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_prefix="LLM_",
+        env_file=".env",
+        env_file_encoding="utf-8",
         extra="ignore",
     )
 
@@ -87,6 +89,8 @@ class AgentSettings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_prefix="AGENT_",
+        env_file=".env",
+        env_file_encoding="utf-8",
         extra="ignore",
     )
 
